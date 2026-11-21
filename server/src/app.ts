@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import authRouter from './routes/auth.js';
 
 const app = express();
 
@@ -12,6 +13,12 @@ app.use(
 );
 // 解析json資料
 app.use(express.json());
+
+app.get('/api/health', function (req, res) {
+  res.json({ status: 'ok' });
+});
+
+app.use('/api/auth', authRouter);
 
 app.get('/', function (req, res) {
   res.send('');
