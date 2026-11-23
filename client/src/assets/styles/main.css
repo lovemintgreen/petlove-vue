@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-coral: #ff6144;
+  --color-brand-yellow: #ffcb48;
+  --color-brand-cream: #fffdfa;
+  --color-brand-warm: #faf5ed;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-brand-cream);
+    color: #222222;
+    overflow-x: hidden;
+  }
+}
+
+@keyframes marquee-left {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-right {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+@keyframes float-down {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, 8px);
+  }
+}

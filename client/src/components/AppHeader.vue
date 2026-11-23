@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import { ChevronDown, Menu, X } from 'lucide-vue-next'
 
 interface NavLinkItem {
   label: string
@@ -16,19 +17,23 @@ const serviceLinks: NavLinkItem[] = [
 ]
 
 const isServiceMenuOpen = ref(false)
+const isMobileMenuOpen = ref(false)
+const isMobileServiceOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 
 function toggleServiceMenu() {
   isServiceMenuOpen.value = !isServiceMenuOpen.value
 }
 
-function closeServiceMenu() {
+function closeAllMenus() {
   isServiceMenuOpen.value = false
+  isMobileMenuOpen.value = false
+  isMobileServiceOpen.value = false
 }
 
 function handleClickOutside(event: MouseEvent) {
   if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
-    closeServiceMenu()
+    isServiceMenuOpen.value = false
   }
 }
 
@@ -42,118 +47,156 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <nav class="navbar navbar-expand-lg fixed-top">
-    <div class="container-fluid row">
-      <div class="col-3">
-        <RouterLink class="navbar-brand" to="/">
-          <img :src="asset('logo白.png')" alt="PetLove Logo" class="logoImg" />
-        </RouterLink>
-      </div>
+  <header class="fixed inset-x-0 top-0 z-50 bg-brand-coral shadow-sm">
+    <nav
+      class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
+      aria-label="主導覽列"
+    >
+      <!-- Logo -->
+      <RouterLink :to="{ name: 'home' }" class="shrink-0" @click="closeAllMenus">
+        <img :src="asset('logo白.png')" alt="PetLove Logo" class="h-10 w-auto sm:h-12" />
+      </RouterLink>
 
-      <div class="col-9 d-flex justify-content-center" id="navbarSupportedContent">
-        <div class="col-10">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0 justify-content-center">
-            <li ref="dropdownRef" class="nav-item dropdown mx-3">
-              <a
-                class="nav-link dropdown-toggle"
-                href="#"
-                role="button"
-                :aria-expanded="isServiceMenuOpen"
-                @click.prevent="toggleServiceMenu"
+      <!-- 桌機導覽選單 -->
+      <ul class="hidden items-center gap-5 lg:flex">
+        <li ref="dropdownRef" class="relative">
+          <button
+            type="button"
+            class="inline-flex h-13 w-32 cursor-pointer items-center justify-center gap-1.5 rounded-full border-2 border-black bg-white text-base font-bold text-neutral-900 transition hover:border-white hover:bg-brand-yellow hover:text-white active:text-[#ff4f30]"
+            :aria-expanded="isServiceMenuOpen"
+            @click.stop="toggleServiceMenu"
+          >
+            <span>服務項目</span>
+            <ChevronDown
+              class="h-4 w-4 transition-transform duration-200"
+              :class="{ 'rotate-180': isServiceMenuOpen }"
+            />
+          </button>
+
+          <ul
+            v-show="isServiceMenuOpen"
+            class="absolute left-0 mt-2 w-40 overflow-hidden rounded-2xl border-[3px] border-black bg-white py-1.5 shadow-lg"
+          >
+            <li v-for="item in serviceLinks" :key="item.to">
+              <RouterLink
+                :to="item.to"
+                class="block px-4 py-2.5 text-lg font-medium text-neutral-900 transition hover:bg-brand-yellow"
+                @click="closeAllMenus"
               >
-                服務項目
-              </a>
-              <ul class="dropdown-menu" :class="{ show: isServiceMenuOpen }">
-                <li v-for="item in serviceLinks" :key="item.to">
-                  <RouterLink
-                    class="dropdown-item fs-5"
-                    :to="item.to"
-                    @click="closeServiceMenu"
-                  >
-                    {{ item.label }}
-                  </RouterLink>
-                </li>
-              </ul>
-            </li>
-
-            <li class="nav-item mx-3">
-              <RouterLink class="nav-link" to="/shop">商品一覽</RouterLink>
-            </li>
-
-            <li class="nav-item mx-3">
-              <RouterLink class="nav-link" to="/faq">FAQ</RouterLink>
+                {{ item.label }}
+              </RouterLink>
             </li>
           </ul>
-        </div>
+        </li>
 
-        <ul class="navbar-nav d-flex flex-row flex-nowrap col-6 align-items-center">
-          <li class="nav-item mx-4 text-center">
-            <RouterLink to="/member">
-              <img :src="asset('membercat.png')" alt="會員中心" class="member-icon" />
-            </RouterLink>
-          </li>
-          <li class="nav-item mx-4 text-center">
-            <RouterLink to="/shop/cart">
-              <img :src="asset('cart.png')" alt="購物車" class="cart-icon" />
-            </RouterLink>
-          </li>
-        </ul>
+        <li>
+          <RouterLink
+            to="/shop"
+            class="inline-flex h-13 w-32 items-center justify-center rounded-full border-2 border-black bg-white text-base font-bold text-neutral-900 transition hover:border-white hover:bg-brand-yellow hover:text-white active:text-[#ff4f30]"
+          >
+            商品一覽
+          </RouterLink>
+        </li>
+
+        <li>
+          <RouterLink
+            to="/faq"
+            class="inline-flex h-13 w-32 items-center justify-center rounded-full border-2 border-black bg-white text-base font-bold text-neutral-900 transition hover:border-white hover:bg-brand-yellow hover:text-white active:text-[#ff4f30]"
+          >
+            FAQ
+          </RouterLink>
+        </li>
+      </ul>
+
+      <!-- 右側圖示 + 行動版漢堡鈕 -->
+      <div class="flex items-center gap-3 sm:gap-5">
+        <RouterLink
+          to="/member"
+          class="inline-flex items-center transition hover:scale-105"
+          aria-label="會員中心"
+          @click="closeAllMenus"
+        >
+          <img :src="asset('membercat.png')" alt="會員中心" class="h-10 w-auto sm:h-13" />
+        </RouterLink>
+
+        <RouterLink
+          to="/shop/cart"
+          class="inline-flex items-center transition hover:scale-105"
+          aria-label="購物車"
+          @click="closeAllMenus"
+        >
+          <img :src="asset('cart.png')" alt="購物車" class="h-9 w-auto sm:h-12" />
+        </RouterLink>
+
+        <button
+          type="button"
+          class="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border-2 border-black bg-white text-neutral-900 transition hover:bg-brand-yellow lg:hidden"
+          :aria-expanded="isMobileMenuOpen"
+          aria-label="切換導覽選單"
+          @click="isMobileMenuOpen = !isMobileMenuOpen"
+        >
+          <X v-if="isMobileMenuOpen" class="h-6 w-6" />
+          <Menu v-else class="h-6 w-6" />
+        </button>
       </div>
+    </nav>
+
+    <!-- 行動版抽屜選單 -->
+    <div
+      v-show="isMobileMenuOpen"
+      class="border-t-2 border-black/15 bg-brand-coral px-4 pt-3 pb-5 shadow-md lg:hidden"
+    >
+      <ul class="mx-auto flex max-w-md flex-col gap-2.5">
+        <li>
+          <button
+            type="button"
+            class="flex w-full cursor-pointer items-center justify-between rounded-2xl border-2 border-black bg-white px-4 py-3 text-base font-bold text-neutral-900 transition hover:bg-brand-yellow"
+            :aria-expanded="isMobileServiceOpen"
+            @click="isMobileServiceOpen = !isMobileServiceOpen"
+          >
+            <span>服務項目</span>
+            <ChevronDown
+              class="h-5 w-5 transition-transform duration-200"
+              :class="{ 'rotate-180': isMobileServiceOpen }"
+            />
+          </button>
+
+          <ul
+            v-show="isMobileServiceOpen"
+            class="mt-2 flex flex-col gap-1.5 rounded-2xl border-2 border-black bg-white/95 p-2"
+          >
+            <li v-for="item in serviceLinks" :key="item.to">
+              <RouterLink
+                :to="item.to"
+                class="block rounded-xl px-4 py-2 text-base font-semibold text-neutral-800 transition hover:bg-brand-yellow"
+                @click="closeAllMenus"
+              >
+                {{ item.label }}
+              </RouterLink>
+            </li>
+          </ul>
+        </li>
+
+        <li>
+          <RouterLink
+            to="/shop"
+            class="block rounded-2xl border-2 border-black bg-white px-4 py-3 text-center text-base font-bold text-neutral-900 transition hover:bg-brand-yellow"
+            @click="closeAllMenus"
+          >
+            商品一覽
+          </RouterLink>
+        </li>
+
+        <li>
+          <RouterLink
+            to="/faq"
+            class="block rounded-2xl border-2 border-black bg-white px-4 py-3 text-center text-base font-bold text-neutral-900 transition hover:bg-brand-yellow"
+            @click="closeAllMenus"
+          >
+            FAQ
+          </RouterLink>
+        </li>
+      </ul>
     </div>
-  </nav>
+  </header>
 </template>
-
-<style lang="scss" scoped>
-nav {
-  background-color: #ff6144;
-  height: 80px;
-  font-size: 18px;
-
-  li {
-    list-style: none;
-  }
-
-  .logoImg {
-    width: 150px;
-    padding-left: 50px;
-  }
-}
-
-.dropdown-menu {
-  border: 3px solid black;
-  width: fit-content;
-
-  .dropdown-item:hover {
-    background-color: #ffcb48;
-  }
-}
-
-.nav-link {
-  background-color: white;
-  border: 2px solid black;
-  border-radius: 30px;
-  white-space: nowrap;
-  width: 120px;
-  height: 55px;
-  text-align: center;
-  padding-top: 10px;
-}
-
-.nav-link:hover {
-  color: #ffffff;
-  background-color: #ffcb48;
-  border-color: #ffffff;
-}
-
-.nav-link:active {
-  color: #ff4f30;
-}
-
-.member-icon {
-  height: 55px;
-}
-
-.cart-icon {
-  height: 50px;
-}
-</style>
