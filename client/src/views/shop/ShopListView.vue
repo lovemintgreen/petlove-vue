@@ -1,65 +1,115 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { ChevronLeft, ChevronRight, Search, ShoppingCart } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, RefreshCw, Search, ShoppingCart } from 'lucide-vue-next'
 import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import QuickAddCartModal from '@/components/QuickAddCartModal.vue'
-import {
-  MOCK_PRODUCTS,
-  SHOP_CATEGORIES,
-  getProductPriceRange,
-} from '@/data/mockProducts'
-import type { Product } from '@/types/shop'
+import { getCategoriesApi, getProductsApi } from '@/api/products'
+import type { PaginationMeta, Product } from '@/types/shop'
 
 const route = useRoute()
 
 const imgAsset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
 
 const PAGE_SIZE = 6
+
+const categories = ref<string[]>([])
+const products = ref<Product[]>([])
+const pagination = ref<PaginationMeta>({
+  page: 1,
+  limit: PAGE_SIZE,
+  total: 0,
+  totalPages: 1,
+})
+
 const currentPage = ref(1)
 const searchKeyword = ref('')
+const debouncedKeyword = ref('')
+const isLoading = ref(false)
+const errorMessage = ref('')
 const modalProduct = ref<Product | null>(null)
 const toastMessage = ref('')
 
+let searchTimer: ReturnType<typeof setTimeout> | null = null
 let toastTimer: ReturnType<typeof setTimeout> | null = null
+let fetchSeq = 0
 
 const activeCategory = computed(() => {
   const param = route.params.category
   return typeof param === 'string' && param.trim() ? decodeURIComponent(param) : ''
 })
 
-const filteredProducts = computed(() => {
-  const keyword = searchKeyword.value.trim().toLowerCase()
-  return MOCK_PRODUCTS.filter((item) => {
-    const matchCategory = !activeCategory.value || item.category === activeCategory.value
-    const matchKeyword =
-      !keyword ||
-      item.name.toLowerCase().includes(keyword) ||
-      item.category.toLowerCase().includes(keyword)
-    return matchCategory && matchKeyword
-  })
+async function loadCategories() {
+  try {
+    categories.value = await getCategoriesApi()
+  } catch (err) {
+    console.error('載入商品分類失敗', err)
+  }
+}
+
+async function loadProducts() {
+  const seq = ++fetchSeq
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    const result = await getProductsApi({
+      category: activeCategory.value || undefined,
+      keyword: debouncedKeyword.value || undefined,
+      page: currentPage.value,
+      limit: PAGE_SIZE,
+    })
+
+    if (seq !== fetchSeq) return
+
+    products.value = result.data
+    pagination.value = result.pagination
+    currentPage.value = result.pagination.page
+  } catch (err) {
+    if (seq !== fetchSeq) return
+    console.error('載入商品列表失敗', err)
+    errorMessage.value = '無法載入商品資料，請確認後端伺服器與資料庫已啟動。'
+    products.value = []
+  } finally {
+    if (seq === fetchSeq) {
+      isLoading.value = false
+    }
+  }
+}
+
+watch(searchKeyword, (value) => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    debouncedKeyword.value = value.trim()
+  }, 300)
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredProducts.value.length / PAGE_SIZE)))
-
-const paginatedProducts = computed(() => {
-  const start = (currentPage.value - 1) * PAGE_SIZE
-  return filteredProducts.value.slice(start, start + PAGE_SIZE)
-})
-
-watch([activeCategory, searchKeyword], () => {
+watch([activeCategory, debouncedKeyword], () => {
   currentPage.value = 1
+  loadProducts()
+})
+
+onMounted(() => {
+  loadCategories()
+  loadProducts()
+})
+
+onUnmounted(() => {
+  if (searchTimer) clearTimeout(searchTimer)
+  if (toastTimer) clearTimeout(toastTimer)
 })
 
 function formatPriceRange(product: Product): string {
-  const { min, max } = getProductPriceRange(product)
-  return min === max ? `NT$${min}` : `NT$${min} - ${max}`
+  return product.minPrice === product.maxPrice
+    ? `NT$${product.minPrice}`
+    : `NT$${product.minPrice} - ${product.maxPrice}`
 }
 
 function goToPage(page: number) {
-  if (page < 1 || page > totalPages.value) return
+  if (page < 1 || page > pagination.value.totalPages || page === currentPage.value) return
   currentPage.value = page
+  loadProducts()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
@@ -93,7 +143,7 @@ function handleAddedToast(productName: string) {
             {{ activeCategory || '全部商品' }}
           </h1>
           <p class="mt-1 text-sm text-neutral-500">
-            共 {{ filteredProducts.length }} 項精選毛孩商品｜全館享 88 折、滿 NT$1,000 免運
+            共 {{ pagination.total }} 項精選毛孩商品｜全館享 88 折、滿 NT$1,000 免運
           </p>
         </div>
 
@@ -111,10 +161,7 @@ function handleAddedToast(productName: string) {
       </div>
 
       <!-- 手機／平板水平分類膠囊列 -->
-      <nav
-        class="mb-6 flex gap-2 overflow-x-auto pb-2 lg:hidden"
-        aria-label="商品分類"
-      >
+      <nav class="mb-6 flex gap-2 overflow-x-auto pb-2 lg:hidden" aria-label="商品分類">
         <RouterLink
           to="/shop"
           class="shrink-0 rounded-full border-2 px-4 py-1.5 text-sm font-bold transition"
@@ -127,7 +174,7 @@ function handleAddedToast(productName: string) {
           全部商品
         </RouterLink>
         <RouterLink
-          v-for="cat in SHOP_CATEGORIES"
+          v-for="cat in categories"
           :key="cat"
           :to="`/shop/category/${encodeURIComponent(cat)}`"
           class="shrink-0 rounded-full border-2 px-4 py-1.5 text-sm font-bold transition"
@@ -145,7 +192,9 @@ function handleAddedToast(productName: string) {
         <!-- 桌機左側分類欄 -->
         <aside class="hidden w-56 shrink-0 lg:block" aria-label="商品分類導覽">
           <div class="sticky top-28 overflow-hidden rounded-3xl border-2 border-neutral-800 bg-white">
-            <div class="border-b-2 border-neutral-800 bg-brand-coral px-5 py-3 text-base font-extrabold text-white">
+            <div
+              class="border-b-2 border-neutral-800 bg-brand-coral px-5 py-3 text-base font-extrabold text-white"
+            >
               商品分類
             </div>
             <ul class="space-y-1 p-3">
@@ -162,7 +211,7 @@ function handleAddedToast(productName: string) {
                   全部商品
                 </RouterLink>
               </li>
-              <li v-for="cat in SHOP_CATEGORIES" :key="cat">
+              <li v-for="cat in categories" :key="cat">
                 <RouterLink
                   :to="`/shop/category/${encodeURIComponent(cat)}`"
                   class="block rounded-xl px-4 py-2.5 text-base font-bold transition"
@@ -181,16 +230,58 @@ function handleAddedToast(productName: string) {
 
         <!-- 商品卡片區 -->
         <section class="flex-1">
+          <!-- 載入中 -->
           <div
-            v-if="paginatedProducts.length === 0"
+            v-if="isLoading"
+            class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3"
+            aria-label="商品載入中"
+          >
+            <div
+              v-for="n in PAGE_SIZE"
+              :key="n"
+              class="h-96 animate-pulse rounded-3xl border-2 border-neutral-200 bg-white p-4"
+            >
+              <div class="mb-4 h-52 rounded-2xl bg-brand-warm"></div>
+              <div class="mb-2 h-4 w-1/3 rounded bg-neutral-200"></div>
+              <div class="mb-4 h-5 w-3/4 rounded bg-neutral-200"></div>
+              <div class="mt-auto h-10 rounded-full bg-neutral-200"></div>
+            </div>
+          </div>
+
+          <!-- 載入失敗 -->
+          <div
+            v-else-if="errorMessage"
+            class="rounded-3xl border-2 border-red-200 bg-red-50 p-10 text-center"
+            role="alert"
+          >
+            <p class="mb-4 font-bold text-red-700">{{ errorMessage }}</p>
+            <button
+              type="button"
+              class="inline-flex cursor-pointer items-center gap-2 rounded-full border-2 border-neutral-800 bg-brand-yellow px-6 py-2.5 text-sm font-extrabold text-neutral-900 transition hover:bg-brand-coral hover:text-white"
+              @click="
+                () => {
+                  loadCategories()
+                  loadProducts()
+                }
+              "
+            >
+              <RefreshCw class="h-4 w-4" />
+              <span>重新載入</span>
+            </button>
+          </div>
+
+          <!-- 無資料 -->
+          <div
+            v-else-if="products.length === 0"
             class="rounded-3xl border-2 border-dashed border-neutral-300 bg-white p-12 text-center text-neutral-500"
           >
             找不到符合條件的商品，請換個關鍵字或分類試試！
           </div>
 
+          <!-- 商品卡片 -->
           <div v-else class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
             <article
-              v-for="productItem in paginatedProducts"
+              v-for="productItem in products"
               :key="productItem.id"
               class="flex flex-col overflow-hidden rounded-3xl border-2 border-neutral-800 bg-white transition hover:-translate-y-1 hover:shadow-lg"
             >
@@ -235,7 +326,7 @@ function handleAddedToast(productName: string) {
 
           <!-- 分頁器 -->
           <nav
-            v-if="totalPages > 1"
+            v-if="!isLoading && !errorMessage && pagination.totalPages > 1"
             class="mt-10 flex items-center justify-center gap-2"
             aria-label="商品分頁"
           >
@@ -250,7 +341,7 @@ function handleAddedToast(productName: string) {
             </button>
 
             <button
-              v-for="page in totalPages"
+              v-for="page in pagination.totalPages"
               :key="page"
               type="button"
               class="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-2 text-sm font-extrabold transition"
@@ -267,7 +358,7 @@ function handleAddedToast(productName: string) {
             <button
               type="button"
               class="inline-flex h-10 cursor-pointer items-center gap-1 rounded-full border-2 border-neutral-800 bg-white px-4 text-sm font-bold text-neutral-800 transition hover:bg-brand-yellow disabled:cursor-not-allowed disabled:opacity-40"
-              :disabled="currentPage >= totalPages"
+              :disabled="currentPage >= pagination.totalPages"
               @click="goToPage(currentPage + 1)"
             >
               <span>下一頁</span>

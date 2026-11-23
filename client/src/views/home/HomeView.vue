@@ -268,7 +268,9 @@ onUnmounted(() => {
       class="fixed inset-x-0 bottom-0 z-30 w-full overflow-hidden bg-brand-cream/95 py-1.5 backdrop-blur-xs"
     >
       <div class="w-full overflow-hidden whitespace-nowrap">
-        <p class="marquee-left-slow inline-block text-sm font-extrabold text-brand-coral sm:text-lg">
+        <p
+          class="marquee-left-slow inline-block text-sm font-extrabold text-brand-coral sm:text-lg"
+        >
           {{ marquee0Text }}
         </p>
       </div>

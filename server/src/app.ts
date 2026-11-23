@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import authRouter from './routes/auth.js';
+import productsRouter from './routes/products.js';
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.get('/api/health', function (req, res) {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/products', productsRouter);
 
 app.get('/', function (req, res) {
   res.send('');

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Minus, Plus, ShoppingCart } from 'lucide-vue-next'
+import axios from 'axios'
+import { ArrowLeft, Minus, Plus, RefreshCw, ShoppingCart } from 'lucide-vue-next'
 import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
-import { findProductById } from '@/data/mockProducts'
+import { getProductByIdApi } from '@/api/products'
 import { useCartStore } from '@/stores/cart'
+import type { Product } from '@/types/shop'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,23 +15,61 @@ const cartStore = useCartStore()
 
 const imgAsset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
 
-const product = computed(() => {
-  const id = Number(route.params.id)
-  return Number.isNaN(id) ? undefined : findProductById(id)
-})
+const product = ref<Product | null>(null)
+const isLoading = ref(true)
+const notFound = ref(false)
+const errorMessage = ref('')
 
 const selectedSpecIndex = ref(0)
 const selectedTaste = ref('')
 const quantity = ref(1)
 const addedFeedback = ref('')
 
-watch(
-  product,
-  (item) => {
+let fetchSeq = 0
+
+async function loadProduct() {
+  const seq = ++fetchSeq
+  const id = Number(route.params.id)
+
+  isLoading.value = true
+  notFound.value = false
+  errorMessage.value = ''
+  addedFeedback.value = ''
+
+  if (!Number.isInteger(id) || id <= 0) {
+    product.value = null
+    notFound.value = true
+    isLoading.value = false
+    return
+  }
+
+  try {
+    const data = await getProductByIdApi(id)
+    if (seq !== fetchSeq) return
+
+    product.value = data
     selectedSpecIndex.value = 0
-    selectedTaste.value = item?.tastes[0] ?? ''
+    selectedTaste.value = data.tastes[0] ?? ''
     quantity.value = 1
-    addedFeedback.value = ''
+  } catch (err) {
+    if (seq !== fetchSeq) return
+    product.value = null
+    if (axios.isAxiosError(err) && err.response?.status === 404) {
+      notFound.value = true
+    } else {
+      errorMessage.value = '無法載入商品詳情，請確認後端伺服器是否已啟動。'
+    }
+  } finally {
+    if (seq === fetchSeq) {
+      isLoading.value = false
+    }
+  }
+}
+
+watch(
+  () => route.params.id,
+  () => {
+    loadProduct()
   },
   { immediate: true },
 )
@@ -86,9 +126,40 @@ function handleBuyNow() {
         </RouterLink>
       </div>
 
+      <!-- 載入中 -->
+      <div
+        v-if="isLoading"
+        class="grid animate-pulse grid-cols-1 gap-8 rounded-3xl border-2 border-neutral-200 bg-white p-6 sm:p-8 lg:grid-cols-2"
+      >
+        <div class="h-80 rounded-2xl bg-brand-warm"></div>
+        <div class="space-y-4">
+          <div class="h-6 w-24 rounded-full bg-neutral-200"></div>
+          <div class="h-8 w-3/4 rounded bg-neutral-200"></div>
+          <div class="h-10 w-1/3 rounded bg-neutral-200"></div>
+          <div class="h-24 rounded-2xl bg-neutral-100"></div>
+        </div>
+      </div>
+
+      <!-- 載入失敗 -->
+      <div
+        v-else-if="errorMessage"
+        class="rounded-3xl border-2 border-red-200 bg-red-50 p-12 text-center"
+        role="alert"
+      >
+        <p class="mb-4 font-bold text-red-700">{{ errorMessage }}</p>
+        <button
+          type="button"
+          class="inline-flex cursor-pointer items-center gap-2 rounded-full border-2 border-neutral-800 bg-brand-yellow px-6 py-2.5 text-sm font-extrabold text-neutral-900 transition hover:bg-brand-coral hover:text-white"
+          @click="loadProduct"
+        >
+          <RefreshCw class="h-4 w-4" />
+          <span>重新載入</span>
+        </button>
+      </div>
+
       <!-- 找不到商品 -->
       <div
-        v-if="!product"
+        v-else-if="notFound || !product"
         class="rounded-3xl border-2 border-dashed border-neutral-300 bg-white p-12 text-center"
       >
         <p class="mb-4 text-lg font-bold text-neutral-700">找不到此商品</p>
@@ -116,7 +187,7 @@ function handleBuyNow() {
 
         <!-- 右側選購資訊 -->
         <div class="flex flex-col">
-          <div class="mb-2 flex items-center gap-2 text-xs font-bold">
+          <div class="mb-2 flex flex-wrap items-center gap-2 text-xs font-bold">
             <RouterLink
               :to="`/shop/category/${encodeURIComponent(product.category)}`"
               class="rounded-full bg-brand-warm px-3 py-1 text-brand-coral hover:bg-brand-yellow hover:text-neutral-900"
@@ -124,6 +195,9 @@ function handleBuyNow() {
               {{ product.category }}
             </RouterLink>
             <span class="rounded-full bg-red-50 px-3 py-1 text-brand-coral">全館 88 折</span>
+            <span class="rounded-full bg-neutral-100 px-3 py-1 text-neutral-600">
+              庫存 {{ product.stock }} 件
+            </span>
           </div>
 
           <h1 class="text-2xl font-black text-neutral-900 sm:text-3xl">{{ product.name }}</h1>
@@ -141,7 +215,7 @@ function handleBuyNow() {
             <div class="flex flex-wrap gap-2.5">
               <button
                 v-for="(specItem, index) in product.specs"
-                :key="specItem.spec"
+                :key="specItem.specId ?? specItem.spec"
                 type="button"
                 class="cursor-pointer rounded-full border-2 px-4 py-2 text-sm font-bold transition"
                 :class="
