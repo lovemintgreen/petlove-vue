@@ -26,6 +26,38 @@ const router = createRouter({
       component: HomeView,
     },
     {
+      path: '/shop',
+      name: 'shop',
+      component: () => import('@/views/shop/ShopListView.vue'),
+    },
+    {
+      path: '/shop/category/:category',
+      name: 'shop-category',
+      component: () => import('@/views/shop/ShopListView.vue'),
+    },
+    {
+      path: '/shop/product/:id',
+      name: 'shop-product',
+      component: () => import('@/views/shop/ProductDetailView.vue'),
+    },
+    {
+      path: '/shop/cart',
+      name: 'shop-cart',
+      component: () => import('@/views/shop/CartView.vue'),
+    },
+    {
+      path: '/shop/checkout',
+      name: 'shop-checkout',
+      component: () => import('@/views/shop/CheckoutView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/shop/order-success',
+      name: 'shop-order-success',
+      component: () => import('@/views/shop/OrderSuccessView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('@/views/member/LoginView.vue'),

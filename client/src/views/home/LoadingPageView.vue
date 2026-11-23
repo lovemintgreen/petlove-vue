@@ -149,18 +149,14 @@ onUnmounted(() => {
       :class="isShowcaseVisible ? 'opacity-100' : 'opacity-0'"
     >
       <div v-for="item in showcaseItems" :key="item.image" class="mb-20 sm:mb-32">
-        <img
-          class="w-full rounded-3xl object-cover shadow-lg"
-          :src="item.image"
-          :alt="item.alt"
-        />
+        <img class="w-full rounded-3xl object-cover shadow-lg" :src="item.image" :alt="item.alt" />
         <div v-if="item.services" class="my-6 space-y-2 text-center sm:my-8 sm:space-y-3">
           <h2
             v-for="service in item.services"
             :key="service"
-            class="text-2xl font-black text-brand-coral sm:text-4xl"
+            class="p-2 text-2xl font-black rounded-xl border- border-brand-coral text-brand-coral sm:text-4xl"
           >
-            {{ service }}
+            <span>{{ service }}</span>
           </h2>
         </div>
       </div>

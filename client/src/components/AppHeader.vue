@@ -2,12 +2,14 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ChevronDown, Menu, X } from 'lucide-vue-next'
+import { useCartStore } from '@/stores/cart'
 
 interface NavLinkItem {
   label: string
   to: string
 }
 
+const cartStore = useCartStore()
 const asset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
 
 const serviceLinks: NavLinkItem[] = [
@@ -54,7 +56,7 @@ onUnmounted(() => {
     >
       <!-- Logo -->
       <RouterLink :to="{ name: 'home' }" class="shrink-0" @click="closeAllMenus">
-        <img :src="asset('logo白.png')" alt="PetLove Logo" class="h-10 w-auto sm:h-12" />
+        <img :src="asset('logo白.png')" alt="PetLove Logo" class="h-20 w-37.5 sm:h-25" />
       </RouterLink>
 
       <!-- 桌機導覽選單 -->
@@ -121,11 +123,17 @@ onUnmounted(() => {
 
         <RouterLink
           to="/shop/cart"
-          class="inline-flex items-center transition hover:scale-105"
+          class="relative inline-flex items-center transition hover:scale-105"
           aria-label="購物車"
           @click="closeAllMenus"
         >
           <img :src="asset('cart.png')" alt="購物車" class="h-9 w-auto sm:h-12" />
+          <span
+            v-if="cartStore.totalCount > 0"
+            class="absolute -top-1 -right-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-neutral-900 bg-brand-yellow px-1 text-xs font-black text-neutral-900"
+          >
+            {{ cartStore.totalCount > 99 ? '99+' : cartStore.totalCount }}
+          </span>
         </RouterLink>
 
         <button

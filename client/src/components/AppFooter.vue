@@ -15,10 +15,10 @@ const serviceLinks: FooterLinkItem[] = [
 ]
 
 const shopLinks: FooterLinkItem[] = [
-  { label: '乾飼料', to: '/shop' },
-  { label: '罐頭', to: '/shop' },
-  { label: '零食', to: '/shop' },
-  { label: '其他用品', to: '/shop' },
+  { label: '乾飼料', to: '/shop/category/乾飼料' },
+  { label: '罐頭', to: '/shop/category/罐頭' },
+  { label: '零食', to: '/shop/category/零食' },
+  { label: '其他用品', to: '/shop/category/其他用品' },
 ]
 
 const contactItems = ['04-2326-5860', '10:00 - 22:00', 'petlove@gmail.com']
@@ -26,15 +26,15 @@ const contactItems = ['04-2326-5860', '10:00 - 22:00', 'petlove@gmail.com']
 
 <template>
   <footer
-    class="mt-20 w-full rounded-t-[48px] bg-brand-yellow px-6 pt-12 pb-16 sm:mt-28 md:mt-36 md:rounded-t-[100px] md:pt-16 md:pb-20"
+    class="mt-12 w-full rounded-t-[48px] bg-brand-yellow px-6 pt-10 pb-12 md:mt-16 md:rounded-t-[80px] md:pt-12 md:pb-14"
   >
     <div class="mx-auto max-w-5xl">
-      <div class="mb-10 flex justify-center md:mb-14">
+      <div class="mb-8 flex justify-center md:mb-10">
         <RouterLink :to="{ name: 'home' }" class="inline-flex justify-center">
           <img
             :src="asset('LOGO.png')"
             alt="PetLove Logo"
-            class="w-48 transition hover:opacity-90 sm:w-64 md:w-80"
+            class="w-44 transition hover:opacity-90 sm:w-56 md:w-64"
           />
         </RouterLink>
       </div>

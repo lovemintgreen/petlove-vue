@@ -18,10 +18,10 @@ function scrollToTop() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-brand-cream pt-20">
+  <div class="flex min-h-screen flex-col bg-brand-cream pt-20">
     <AppHeader />
 
-    <div class="flex min-h-[calc(100vh-5rem)] flex-col md:flex-row">
+    <div class="flex flex-1 flex-col md:flex-row">
       <MemberSidebar />
 
       <main class="relative flex-1 px-4 py-6 sm:px-6 md:px-9 md:py-8">
