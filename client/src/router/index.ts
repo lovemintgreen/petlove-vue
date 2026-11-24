@@ -59,6 +59,16 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/faq',
+      name: 'faq',
+      component: () => import('@/views/faq/FaqView.vue'),
+    },
+    {
+      path: '/faq/form',
+      name: 'faq-form',
+      component: () => import('@/views/faq/FaqFormView.vue'),
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('@/views/member/LoginView.vue'),
