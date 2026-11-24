@@ -6,11 +6,12 @@ import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import QuickAddCartModal from '@/components/QuickAddCartModal.vue'
 import { getCategoriesApi, getProductsApi } from '@/api/products'
+import { resolveProductImage } from '@/utils/image'
 import type { PaginationMeta, Product } from '@/types/shop'
 
 const route = useRoute()
 
-const imgAsset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
+const imgAsset = resolveProductImage
 
 const PAGE_SIZE = 6
 

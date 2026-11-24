@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import type { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db.js';
 import { requireAuth } from '../middlewares/auth.js';
-import { signToken } from '../utils/jwt.js';
+import { signToken, type UserRole } from '../utils/jwt.js';
 
 const router = Router();
 const SALT_ROUNDS = 10;
@@ -15,6 +15,7 @@ interface UserRow extends RowDataPacket {
   user_phone: string | null;
   user_mail: string;
   user_password: string;
+  role: string | null;
 }
 
 interface PublicUserRow extends RowDataPacket {
@@ -22,20 +23,26 @@ interface PublicUserRow extends RowDataPacket {
   user_name: string;
   user_phone: string | null;
   user_mail: string;
+  role: string | null;
 }
 
 interface ExistingUserRow extends RowDataPacket {
   user_id: number;
 }
 
+function normalizeRole(role?: string | null): UserRole {
+  return role === 'admin' ? 'admin' : 'user';
+}
+
 function formatUser(
-  row: Pick<PublicUserRow, 'user_id' | 'user_name' | 'user_phone' | 'user_mail'>
+  row: Pick<PublicUserRow, 'user_id' | 'user_name' | 'user_phone' | 'user_mail' | 'role'>
 ) {
   return {
     id: row.user_id,
     name: row.user_name,
     phone: row.user_phone ?? '',
-    email: row.user_mail
+    email: row.user_mail,
+    role: normalizeRole(row.role)
   };
 }
 
@@ -79,14 +86,15 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     }
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    const defaultRole: UserRole = 'user';
 
     const [result] = await pool.execute<ResultSetHeader>(
-      'INSERT INTO users (user_name, user_phone, user_mail, user_password) VALUES (?, ?, ?, ?)',
-      [trimmedName, trimmedPhone, normalizedEmail, passwordHash]
+      'INSERT INTO users (user_name, user_phone, user_mail, user_password, role) VALUES (?, ?, ?, ?, ?)',
+      [trimmedName, trimmedPhone, normalizedEmail, passwordHash, defaultRole]
     );
 
     const userId = result.insertId;
-    const token = signToken({ userId, email: normalizedEmail });
+    const token = signToken({ userId, email: normalizedEmail, role: defaultRole });
 
     res.status(201).json({
       token,
@@ -94,7 +102,8 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
         id: userId,
         name: trimmedName,
         phone: trimmedPhone,
-        email: normalizedEmail
+        email: normalizedEmail,
+        role: defaultRole
       }
     });
   } catch (err: unknown) {
@@ -130,7 +139,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     const normalizedEmail = email.trim().toLowerCase();
 
     const [rows] = await pool.query<UserRow[]>(
-      'SELECT user_id, user_name, user_phone, user_mail, user_password FROM users WHERE user_mail = ? LIMIT 1',
+      'SELECT user_id, user_name, user_phone, user_mail, user_password, role FROM users WHERE user_mail = ? LIMIT 1',
       [normalizedEmail]
     );
 
@@ -148,7 +157,8 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const token = signToken({ userId: user.user_id, email: user.user_mail });
+    const role = normalizeRole(user.role);
+    const token = signToken({ userId: user.user_id, email: user.user_mail, role });
 
     res.status(200).json({
       token,
@@ -173,7 +183,7 @@ router.get(
       }
 
       const [rows] = await pool.query<PublicUserRow[]>(
-        'SELECT user_id, user_name, user_phone, user_mail FROM users WHERE user_id = ? LIMIT 1',
+        'SELECT user_id, user_name, user_phone, user_mail, role FROM users WHERE user_id = ? LIMIT 1',
         [userId]
       );
 

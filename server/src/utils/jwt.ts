@@ -1,8 +1,11 @@
 import jwt, { type SignOptions } from 'jsonwebtoken';
 
+export type UserRole = 'user' | 'admin';
+
 export interface AuthPayload {
   userId: number;
   email: string;
+  role: UserRole;
 }
 
 function getJwtSecret(): string {
@@ -28,8 +31,10 @@ export function verifyToken(token: string): AuthPayload {
   ) {
     throw new Error('Invalid token payload');
   }
+  const role: UserRole = decoded.role === 'admin' ? 'admin' : 'user';
   return {
     userId: decoded.userId,
-    email: decoded.email
+    email: decoded.email,
+    role
   };
 }

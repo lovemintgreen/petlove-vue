@@ -61,7 +61,7 @@ onUnmounted(() => {
 
       <!-- 桌機導覽選單 -->
       <ul class="hidden items-center gap-5 lg:flex">
-        <li ref="dropdownRef" class="relative">
+        <!-- <li ref="dropdownRef" class="relative">
           <button
             type="button"
             class="inline-flex h-13 w-32 cursor-pointer items-center justify-center gap-1.5 rounded-full border-2 border-black bg-white text-base font-bold text-neutral-900 transition hover:border-white hover:bg-brand-yellow hover:text-white active:text-[#ff4f30]"
@@ -89,7 +89,7 @@ onUnmounted(() => {
               </RouterLink>
             </li>
           </ul>
-        </li>
+        </li> -->
 
         <li>
           <RouterLink

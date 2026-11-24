@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { Minus, Plus, ShoppingCart, X } from 'lucide-vue-next'
 import type { Product } from '@/types/shop'
 import { useCartStore } from '@/stores/cart'
+import { resolveProductImage } from '@/utils/image'
 
 const props = defineProps<{
   product: Product | null
@@ -15,7 +16,7 @@ const emit = defineEmits<{
 
 const cartStore = useCartStore()
 
-const imgAsset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
+const imgAsset = resolveProductImage
 
 const selectedSpecIndex = ref(0)
 const selectedTaste = ref('')

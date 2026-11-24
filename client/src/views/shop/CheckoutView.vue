@@ -6,12 +6,13 @@ import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useCartStore } from '@/stores/cart'
+import { resolveProductImage } from '@/utils/image'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const cartStore = useCartStore()
 
-const imgAsset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
+const imgAsset = resolveProductImage
 
 const form = ref({
   recipientName: authStore.user?.name ?? '',

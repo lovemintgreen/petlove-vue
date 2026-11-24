@@ -5,6 +5,7 @@ import HomeView from '@/views/home/HomeView.vue'
 declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
+    requiresAdmin?: boolean
     guestOnly?: boolean
   }
 }
@@ -173,6 +174,32 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: '/admin',
+      component: () => import('@/views/admin/AdminLayout.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+      children: [
+        {
+          path: '',
+          redirect: { name: 'admin-products' },
+        },
+        {
+          path: 'products',
+          name: 'admin-products',
+          component: () => import('@/views/admin/AdminProductsView.vue'),
+        },
+        {
+          path: 'products/new',
+          name: 'admin-product-new',
+          component: () => import('@/views/admin/AdminProductFormView.vue'),
+        },
+        {
+          path: 'products/:id/edit',
+          name: 'admin-product-edit',
+          component: () => import('@/views/admin/AdminProductFormView.vue'),
+        },
+      ],
+    },
   ],
 })
 
@@ -188,6 +215,10 @@ router.beforeEach(async (to) => {
       name: 'login',
       query: { redirect: to.fullPath },
     }
+  }
+
+  if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    return { name: 'home' }
   }
 
   if (to.meta.guestOnly && authStore.isLoggedIn) {

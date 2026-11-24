@@ -7,13 +7,14 @@ import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import { getProductByIdApi } from '@/api/products'
 import { useCartStore } from '@/stores/cart'
+import { resolveProductImage } from '@/utils/image'
 import type { Product } from '@/types/shop'
 
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
 
-const imgAsset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
+const imgAsset = resolveProductImage
 
 const product = ref<Product | null>(null)
 const isLoading = ref(true)

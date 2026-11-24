@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { ChevronDown, LogOut, Menu, X } from 'lucide-vue-next'
+import { ChevronDown, LogOut, Menu, ShieldCheck, X } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 
 interface SidebarLink {
@@ -162,6 +162,16 @@ async function handleLogout() {
         @click="closeMobileNav"
       >
         加入我們
+      </RouterLink>
+
+      <RouterLink
+        v-if="authStore.isAdmin"
+        to="/admin/products"
+        class="inline-flex items-center gap-2 rounded-xl border-2 border-neutral-800 bg-brand-yellow px-3.5 py-2.5 text-sm font-extrabold text-neutral-900 transition hover:bg-brand-coral hover:text-white sm:text-base"
+        @click="closeMobileNav"
+      >
+        <ShieldCheck class="h-4 w-4" />
+        <span>後台商品管理</span>
       </RouterLink>
 
       <button
