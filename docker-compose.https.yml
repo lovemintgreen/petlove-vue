@@ -1,0 +1,25 @@
+# 選用：搭配網域啟用自動 Let's Encrypt HTTPS（Caddy 反向代理）
+# 啟動指令：docker compose -f docker-compose.yml -f docker-compose.https.yml up -d --build
+services:
+  client:
+    ports: !reset []
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: petlove-caddy
+    restart: unless-stopped
+    depends_on:
+      - client
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
