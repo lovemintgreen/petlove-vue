@@ -155,7 +155,7 @@ onUnmounted(() => {
       class="border-t-2 border-black/15 bg-brand-coral px-4 pt-3 pb-5 shadow-md lg:hidden"
     >
       <ul class="mx-auto flex max-w-md flex-col gap-2.5">
-        <li>
+        <!-- <li>
           <button
             type="button"
             class="flex w-full cursor-pointer items-center justify-between rounded-2xl border-2 border-black bg-white px-4 py-3 text-base font-bold text-neutral-900 transition hover:bg-brand-yellow"
@@ -183,7 +183,7 @@ onUnmounted(() => {
               </RouterLink>
             </li>
           </ul>
-        </li>
+        </li> -->
 
         <li>
           <RouterLink

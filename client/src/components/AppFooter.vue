@@ -71,7 +71,11 @@ const contactItems = ['04-2326-5860', '10:00 - 22:00', 'petlove@gmail.com']
         <div class="select-none">
           <h2 class="mb-4 text-xl font-black text-neutral-900">聯絡我們</h2>
           <ul class="space-y-3">
-            <li v-for="text in contactItems" :key="text" class="text-base font-medium text-neutral-900">
+            <li
+              v-for="text in contactItems"
+              :key="text"
+              class="text-base font-medium text-neutral-900"
+            >
               {{ text }}
             </li>
           </ul>
