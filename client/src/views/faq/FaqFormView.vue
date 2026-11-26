@@ -11,6 +11,7 @@ const authStore = useAuthStore()
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const today = new Date().toISOString().slice(0, 10)
 
+// 聯絡客服表單預設帶入今日日期與已登入會員資料
 const form = ref({
   applicationDate: today,
   name: authStore.user?.name ?? '',
@@ -22,6 +23,9 @@ const form = ref({
 const errorMessage = ref('')
 const isSubmitted = ref(false)
 
+/**
+ * 驗證客服表單必填欄位與 Email 格式後送出
+ */
 function handleSubmit() {
   errorMessage.value = ''
   isSubmitted.value = false

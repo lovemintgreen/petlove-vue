@@ -12,6 +12,7 @@ const authStore = useAuthStore()
 const asset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+// 註冊表單欄位與密碼顯示切換狀態
 const name = ref('')
 const phone = ref('')
 const email = ref('')
@@ -22,6 +23,7 @@ const showConfirmPassword = ref(false)
 const errorMessage = ref('')
 const isSubmitting = ref(false)
 
+// 僅接受站內相對路徑作為註冊完成後的重導目標
 function getRedirectTarget() {
   const redirect = route.query.redirect
   if (typeof redirect === 'string' && redirect.startsWith('/')) {
@@ -30,6 +32,9 @@ function getRedirectTarget() {
   return { name: 'member' }
 }
 
+/**
+ * 檢查會員名稱、Email、密碼長度與確認密碼後呼叫註冊 API
+ */
 async function handleSubmit() {
   errorMessage.value = ''
 

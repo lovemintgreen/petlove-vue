@@ -6,6 +6,7 @@ const authStore = useAuthStore()
 
 const svgAsset = (filename: string) => `${import.meta.env.BASE_URL}svg/${filename}`
 
+// 編輯模式旗標與儲存／錯誤訊息
 const isEditing = ref(false)
 const saveMessage = ref('')
 const errorMessage = ref('')
@@ -16,6 +17,7 @@ const form = ref({
   email: authStore.user?.email ?? '',
 })
 
+// 當 authStore.user 異步載入完成且未處於編輯狀態時，同步回填表單
 watch(
   () => authStore.user,
   (user) => {
@@ -36,6 +38,7 @@ function startEdit() {
   isEditing.value = true
 }
 
+// 取消編輯並還原為 authStore 中的原始會員資料
 function cancelEdit() {
   isEditing.value = false
   errorMessage.value = ''

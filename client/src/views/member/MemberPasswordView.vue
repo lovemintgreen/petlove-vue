@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { Eye, EyeOff } from 'lucide-vue-next'
 
+// 新密碼與確認密碼欄位、顯示切換與提示狀態
 const newPassword = ref('')
 const confirmPassword = ref('')
 const showNewPassword = ref(false)
@@ -9,6 +10,9 @@ const showConfirmPassword = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
+/**
+ * 驗證新密碼長度（>= 8 碼）與兩次輸入是否一致
+ */
 function handleSubmit() {
   errorMessage.value = ''
   successMessage.value = ''

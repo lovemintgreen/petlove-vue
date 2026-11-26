@@ -40,6 +40,7 @@ const completedRequests = ref<ServiceRequest[]>([
   },
 ])
 
+// 評分彈窗目標訂單與星等／評論狀態
 const ratingTarget = ref<ServiceRequest | null>(null)
 const selectedScore = ref(5)
 const reviewComment = ref('')
@@ -55,6 +56,9 @@ function closeRatingModal() {
   ratingTarget.value = null
 }
 
+/**
+ * 送出訂單星等評價並將該筆訂單標記為已評分
+ */
 function submitRating() {
   if (!ratingTarget.value) return
   ratingTarget.value.rated = true

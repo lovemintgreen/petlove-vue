@@ -14,20 +14,27 @@ const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
 
+// 圖片路徑解析工具（相容 /img/ 靜態圖、/uploads/ 與外部圖床 URL）
 const imgAsset = resolveProductImage
 
+// 商品資料與頁面載入狀態
 const product = ref<Product | null>(null)
 const isLoading = ref(true)
 const notFound = ref(false)
 const errorMessage = ref('')
 
+// 使用者選購狀態（預設選取第一組規格與口味）
 const selectedSpecIndex = ref(0)
 const selectedTaste = ref('')
 const quantity = ref(1)
 const addedFeedback = ref('')
 
+// 遞增請求序號，避免快速切換商品時較慢回傳的舊請求覆蓋新資料（防競態條件）
 let fetchSeq = 0
 
+/**
+ * 依路由參數 id 載入商品詳情，並重設選購狀態
+ */
 async function loadProduct() {
   const seq = ++fetchSeq
   const id = Number(route.params.id)
@@ -37,6 +44,7 @@ async function loadProduct() {
   errorMessage.value = ''
   addedFeedback.value = ''
 
+  // 前端先行攔截非正整數的無效商品編號
   if (!Number.isInteger(id) || id <= 0) {
     product.value = null
     notFound.value = true
@@ -46,6 +54,7 @@ async function loadProduct() {
 
   try {
     const data = await getProductByIdApi(id)
+    // 若期間已觸發新一輪查詢，直接捨棄過期回應
     if (seq !== fetchSeq) return
 
     product.value = data
@@ -55,6 +64,7 @@ async function loadProduct() {
   } catch (err) {
     if (seq !== fetchSeq) return
     product.value = null
+    // 區分 404 查無商品與伺服器／網路連線異常
     if (axios.isAxiosError(err) && err.response?.status === 404) {
       notFound.value = true
     } else {
@@ -67,6 +77,7 @@ async function loadProduct() {
   }
 }
 
+// 監聽路由商品編號變化，初次掛載與切換不同商品時皆重新載入
 watch(
   () => route.params.id,
   () => {
@@ -75,6 +86,7 @@ watch(
   { immediate: true },
 )
 
+// 目前選取規格、單價與依數量即時計算的總價
 const currentSpec = computed(() => product.value?.specs[selectedSpecIndex.value] ?? null)
 const unitPrice = computed(() => currentSpec.value?.price ?? 0)
 const totalPrice = computed(() => unitPrice.value * quantity.value)
@@ -87,6 +99,9 @@ function increment() {
   quantity.value += 1
 }
 
+/**
+ * 將目前選擇的規格、口味與數量寫入購物車 Store
+ */
 function addCurrentProduct() {
   if (!product.value || !currentSpec.value) return false
   cartStore.addItem({
@@ -94,6 +109,7 @@ function addCurrentProduct() {
     productImg: product.value.image,
     productName: product.value.name,
     productSpec: currentSpec.value.spec,
+    // 若商品未設定口味選項，則以「標準」作為預設值
     taste: selectedTaste.value || '標準',
     unitPrice: currentSpec.value.price,
     quantity: quantity.value,
@@ -106,6 +122,7 @@ function handleAddToCart() {
   addedFeedback.value = '商品已加入購物車！'
 }
 
+// 加入購物車後直接導向購物車結帳頁
 function handleBuyNow() {
   if (!addCurrentProduct()) return
   router.push({ name: 'shop-cart' })

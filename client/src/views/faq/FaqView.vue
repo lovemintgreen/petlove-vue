@@ -68,8 +68,12 @@ const faqSections: FaqSection[] = [
   },
 ]
 
+// 預設展開所有常見問題分類區塊
 const openSectionIds = ref<string[]>(faqSections.map((section) => section.id))
 
+/**
+ * 切換指定 FAQ 分類的展開／收合狀態
+ */
 function toggleSection(id: string) {
   if (openSectionIds.value.includes(id)) {
     openSectionIds.value = openSectionIds.value.filter((item) => item !== id)

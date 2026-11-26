@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+// 領養寵物資料型別（畫面展示與後端串接用）
 interface AdoptionPet {
   id: number
   petName: string

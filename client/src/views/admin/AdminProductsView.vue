@@ -20,6 +20,7 @@ const router = useRouter()
 
 const PAGE_SIZE = 10
 
+// 商品清單與分頁狀態
 const categories = ref<string[]>([])
 const products = ref<Product[]>([])
 const pagination = ref<PaginationMeta>({
@@ -29,6 +30,7 @@ const pagination = ref<PaginationMeta>({
   totalPages: 1,
 })
 
+// 篩選、搜尋與頁面提示狀態
 const selectedCategory = ref('')
 const searchKeyword = ref('')
 const debouncedKeyword = ref('')
@@ -37,10 +39,12 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const bannerMessage = ref('')
 
+// 刪除確認彈窗目標商品
 const deleteTarget = ref<Product | null>(null)
 const isDeleting = ref(false)
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
+// 遞增請求序號，防止較慢回傳的舊請求覆蓋最新查詢結果（防競態條件）
 let fetchSeq = 0
 
 async function loadCategories() {
@@ -51,6 +55,9 @@ async function loadCategories() {
   }
 }
 
+/**
+ * 依目前分類、關鍵字與頁碼向後端取得後台商品列表
+ */
 async function loadProducts() {
   const seq = ++fetchSeq
   isLoading.value = true
@@ -81,6 +88,7 @@ async function loadProducts() {
   }
 }
 
+// 搜尋關鍵字防抖 300ms，避免每次輸入都發送 API 請求
 watch(searchKeyword, (value) => {
   if (searchTimer) clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
@@ -88,12 +96,14 @@ watch(searchKeyword, (value) => {
   }, 300)
 })
 
+// 切換分類或搜尋關鍵字時重設回第 1 頁並重新查詢
 watch([selectedCategory, debouncedKeyword], () => {
   currentPage.value = 1
   loadProducts()
 })
 
 onMounted(() => {
+  // 接收新增／編輯頁導回時夾帶的操作成功訊息，並清掉網址 query
   if (typeof route.query.notice === 'string' && route.query.notice) {
     bannerMessage.value = route.query.notice
     router.replace({ name: 'admin-products' })
@@ -119,6 +129,9 @@ function goToPage(page: number) {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+/**
+ * 確認刪除商品，並同步重新載入分類與商品列表
+ */
 async function confirmDelete() {
   if (!deleteTarget.value || isDeleting.value) return
   isDeleting.value = true

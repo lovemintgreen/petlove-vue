@@ -10,6 +10,7 @@ const petOptions = ['狗', '貓']
 const weekdayOptions = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
 const sizeOptions = ['1-5公斤', '5-10公斤', '10-15公斤', '15-20公斤']
 
+// 依路由 props.role 動態切換「保姆」或「遛狗者」申請表單標題與欄位
 const pageTitle = computed(() =>
   props.role === 'nanny' ? '成為夥伴（保姆 ver.）' : '成為夥伴（遛狗者 ver.）',
 )
@@ -25,6 +26,7 @@ const form = ref({
   price: '',
 })
 
+// 送出夥伴申請設定
 function handleSubmit() {
   // 後續串接 /api/member/become-nanny 或 /api/member/become-walker
   isSubmitted.value = true

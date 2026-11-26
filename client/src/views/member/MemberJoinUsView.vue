@@ -4,6 +4,7 @@ import { RouterLink } from 'vue-router'
 
 const imgAsset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
 
+// 頂部橫幅打字機動畫目標文字與目前顯示片段
 const fullTitle = '成為寵樂的服務夥伴'
 const typedTitle = ref('')
 
@@ -23,6 +24,7 @@ const requirements = [
 
 let timer: ReturnType<typeof setInterval> | null = null
 
+// 掛載後每 140ms 逐字顯示標題，完成或離開頁面時清除計時器
 onMounted(() => {
   let index = 0
   timer = setInterval(() => {

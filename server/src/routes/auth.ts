@@ -6,6 +6,7 @@ import { requireAuth } from '../middlewares/auth.js';
 import { signToken, type UserRole } from '../utils/jwt.js';
 
 const router = Router();
+// bcrypt 加鹽成本因子與基本 Email 格式檢核
 const SALT_ROUNDS = 10;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -30,10 +31,12 @@ interface ExistingUserRow extends RowDataPacket {
   user_id: number;
 }
 
+// 僅允許 'admin' 角色通過，其餘一律正規化為預設一般會員 'user'
 function normalizeRole(role?: string | null): UserRole {
   return role === 'admin' ? 'admin' : 'user';
 }
 
+// 過濾 user_password 等敏感欄位，僅回傳前端所需的公開使用者資料
 function formatUser(
   row: Pick<PublicUserRow, 'user_id' | 'user_name' | 'user_phone' | 'user_mail' | 'role'>
 ) {
@@ -46,7 +49,7 @@ function formatUser(
   };
 }
 
-// POST /api/auth/register
+// POST /api/auth/register：會員註冊，驗證欄位後進行 bcrypt 雜湊並簽發 JWT
 router.post('/register', async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, phone, email, password } = req.body ?? {};
@@ -86,6 +89,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     }
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    // 註冊一律強制指派為一般會員，防止前端傳參越權提權
     const defaultRole: UserRole = 'user';
 
     const [result] = await pool.execute<ResultSetHeader>(
@@ -107,6 +111,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
       }
     });
   } catch (err: unknown) {
+    // 處理併發註冊時觸發的資料庫 UNIQUE 索引衝突
     if (
       typeof err === 'object' &&
       err !== null &&
@@ -121,7 +126,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// POST /api/auth/login
+// POST /api/auth/login：驗證信箱與 bcrypt 密碼雜湊，成功後核發 JWT
 router.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body ?? {};
@@ -170,7 +175,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// GET /api/auth/me
+// GET /api/auth/me：透過 Bearer Token 取得當前登入使用者的最新非敏感資料
 router.get(
   '/me',
   requireAuth,

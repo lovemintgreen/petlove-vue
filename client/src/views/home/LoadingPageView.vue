@@ -39,15 +39,18 @@ const showcaseItems: ShowcaseItem[] = [
   },
 ]
 
+// 頁面捲動距離與視窗高度（SSR 防護給定預設高度 900）
 const scrollY = ref(0)
 const windowHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 900)
 
+// 依捲動距離驅動各階段前導動畫進度
 const logoScale = computed(() => 1 + (2 * scrollY.value) / 500)
 const isLogoVisible = computed(() => scrollY.value <= windowHeight.value * 1)
 const isShowcaseVisible = computed(() => scrollY.value > windowHeight.value * 0.9)
 const isMarqueeVisible = computed(() => scrollY.value > windowHeight.value * 2)
 const isEnterBtnVisible = computed(() => scrollY.value > windowHeight.value * 6)
 
+// 「點擊進入首頁」按鈕出現後隨捲動從 1x 平滑放大至 1.35x
 const enterBtnScale = computed(() => {
   const threshold = windowHeight.value * 6
   if (scrollY.value <= threshold) return 0.9

@@ -18,11 +18,13 @@ const cards = ref<PaymentCard[]>([
   },
 ])
 
+// 新增／編輯信用卡狀態與草稿欄位
 const isAdding = ref(false)
 const editingCardId = ref<number | null>(null)
 const newCard = ref({ cardNumber: '', holderName: '', holderPhone: '' })
 const editDraft = ref({ cardNumber: '', holderName: '', holderPhone: '' })
 
+// 將輸入卡號遮罩為僅顯示末四碼，避免畫面直接暴露完整卡號
 function maskCardNumber(raw: string) {
   const digits = raw.replace(/\D/g, '')
   if (digits.length >= 4) {
@@ -31,6 +33,9 @@ function maskCardNumber(raw: string) {
   return raw
 }
 
+/**
+ * 新增信用卡並於前端遮罩卡號
+ */
 function handleAddCard() {
   if (!newCard.value.cardNumber.trim() || !newCard.value.holderName.trim()) return
   cards.value.push({

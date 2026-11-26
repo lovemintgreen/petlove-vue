@@ -9,6 +9,7 @@ interface AddressItem {
   recipientAddress: string
 }
 
+// 已儲存常用收件地址清單（待串接後端地址 API）
 const addresses = ref<AddressItem[]>([
   {
     id: 1,
@@ -25,6 +26,9 @@ const form = ref({
   recipientAddress: '',
 })
 
+/**
+ * 驗證收件人姓名、手機與地址後新增一筆常用地址
+ */
 function handleAddAddress() {
   if (
     !form.value.recipientName.trim() ||

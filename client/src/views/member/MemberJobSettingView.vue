@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+// 服務選項常數
 const petOptions = ['狗', '貓']
 const weekdayOptions = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
 const sizeOptions = ['1-5公斤', '5-10公斤', '10-15公斤', '15-20公斤']
@@ -18,6 +19,7 @@ const form = ref({
   price: '300',
 })
 
+// 結束編輯模式並顯示儲存提示
 function handleSave() {
   isEditing.value = false
   saveMessage.value = '工作設定已儲存！'

@@ -12,10 +12,12 @@ interface MissionItem {
 }
 
 // 後續串接 /api/member/mission 與 /api/member/missionComplete
+// 即將到來的服務工作清單
 const upcomingMissions = ref<MissionItem[]>([
   { id: 1, date: '2026-11-26', time: '14:00 - 15:00', frequency: '2 次' },
 ])
 
+// 已完成的服務工作與飼主評分
 const completedMissions = ref<MissionItem[]>([
   { id: 2, date: '2026-11-12', time: '10:00 - 11:00', frequency: '1 次', rating: 5 },
 ])

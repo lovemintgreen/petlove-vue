@@ -45,8 +45,12 @@ const orders = ref<OrderRecord[]>([
   },
 ])
 
+// 記錄已展開明細的訂單編號列表，預設展開第一筆訂單
 const expandedOrderIds = ref<string[]>(['#254'])
 
+/**
+ * 切換指定訂單的商品明細手風琴展開狀態
+ */
 function toggleDetails(orderId: string) {
   if (expandedOrderIds.value.includes(orderId)) {
     expandedOrderIds.value = expandedOrderIds.value.filter((id) => id !== orderId)

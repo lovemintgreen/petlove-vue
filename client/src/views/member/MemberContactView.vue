@@ -9,11 +9,13 @@ const props = defineProps<{
 
 const imgAsset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
 
+// 依路由 props.role 切換「飼主聯絡保姆」或「保姆聯絡飼主」視角
 const isNannyView = computed(() => props.role === 'nanny')
 const backRoute = computed(() => (isNannyView.value ? '/member/request' : '/member/mission'))
 const counterpartLabel = computed(() => (isNannyView.value ? '保母名稱' : '客戶名稱'))
 const counterpartName = computed(() => (isNannyView.value ? '愛遛狗的小姊姊' : '王小明'))
 
+// 服務訂單摘要資訊（待串接真實訂單詳情 API）
 const orderInfo = ref({
   orderCode: '#123',
   dateTime: '2026-11-25 14:00',
@@ -27,6 +29,9 @@ const orderInfo = ref({
 const newMessage = ref('')
 const messages = ref<string[]>([])
 
+/**
+ * 送出新留言並更新訂單備註欄位
+ */
 function handleSubmit() {
   const trimmed = newMessage.value.trim()
   if (!trimmed) return

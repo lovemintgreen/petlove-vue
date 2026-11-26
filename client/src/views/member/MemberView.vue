@@ -5,6 +5,7 @@ const authStore = useAuthStore()
 
 const imgAsset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
 
+// 重複跑馬燈文字以銜接無縫橫向捲動動畫
 const marqueeText =
   '您的帳號控制台裡，您可以檢視近期的訂單，管理您的收貨地址，您可以更改密碼或修改帳號資料。 '.repeat(
     4,

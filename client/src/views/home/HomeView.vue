@@ -99,13 +99,13 @@ const galleryImages = [
 
 // 互動狀態
 const cursorPos = ref({ x: 0, y: 0 })
-const showScrollExtras = ref(false)
-const logoScale = ref(1)
-const isSection1Visible = ref(false)
-const isSection2Visible = ref(false)
+const showScrollExtras = ref(false) // 是否顯示底部跑馬燈與 GoTop 按鈕
+const logoScale = ref(1) // 中央 Logo 隨捲動放大的倍率
+const isSection1Visible = ref(false) // 「服務項目」區塊滑入動畫狀態
+const isSection2Visible = ref(false) // 「流程說明」區塊滑入動畫狀態
 const activeSlide = ref(0)
 
-// Template Refs
+// Template Refs（用於計算區塊進場位置）
 const section1Ref = ref<HTMLElement | null>(null)
 const section2Ref = ref<HTMLElement | null>(null)
 
@@ -113,6 +113,7 @@ const followIconStyle = computed(() => ({
   transform: `translate(${cursorPos.value.x}px, ${cursorPos.value.y}px)`,
 }))
 
+// 限制 Logo 最大放大倍率為 1.8 倍，避免過度遮蔽版面
 const logoStyle = computed(() => ({
   transform: `scale(${Math.min(logoScale.value, 1.8)})`,
 }))
@@ -121,6 +122,9 @@ function handleMouseMove(event: MouseEvent) {
   cursorPos.value = { x: event.clientX, y: event.clientY }
 }
 
+/**
+ * 監聽頁面捲動：控制 GoTop／跑馬燈顯示、Logo 縮放與兩大區塊進場動畫
+ */
 function handleScroll() {
   const scrollPosition = window.scrollY
   const windowHeight = window.innerHeight
@@ -163,6 +167,7 @@ onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
   handleScroll()
 
+  // 每 5 秒自動切換輪播圖
   carouselTimer = setInterval(nextSlide, 5000)
 })
 

@@ -6,6 +6,7 @@ import { ArrowLeft, ImagePlus, Plus, Trash2 } from 'lucide-vue-next'
 import { createProductApi, getProductByIdApi, updateProductApi } from '@/api/products'
 import { resolveProductImage } from '@/utils/image'
 
+// 單筆商品規格表單列（localId 供 v-for key 使用；price 容許 Vue number input 自動轉型）
 interface SpecFormRow {
   localId: number
   spec: string
@@ -16,9 +17,11 @@ interface SpecFormRow {
 const route = useRoute()
 const router = useRouter()
 
+// 預設商品分類快速選填清單與圖片大小上限（5MB）
 const DEFAULT_CATEGORIES = ['乾飼料', '罐頭', '零食', '其他用品']
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
+// 由路由參數判斷目前為「編輯模式」或「新增模式」
 const editProductId = computed(() => {
   const param = route.params.id
   if (typeof param !== 'string' || !/^\d+$/.test(param)) return null
@@ -27,12 +30,14 @@ const editProductId = computed(() => {
 
 const isEditMode = computed(() => editProductId.value !== null)
 
+// 表單欄位狀態
 const name = ref('')
 const category = ref('乾飼料')
 const stock = ref<string | number>('0')
 const introduction = ref('')
 const specs = ref<SpecFormRow[]>([{ localId: 1, spec: '', taste: '', price: '' }])
 
+// 圖片狀態：既有圖片路徑、使用者新選檔案與本地預覽 ObjectURL
 const existingImage = ref('')
 const selectedFile = ref<File | null>(null)
 const previewObjectUrl = ref('')
@@ -43,11 +48,13 @@ const errorMessage = ref('')
 
 let nextSpecLocalId = 2
 
+// 優先顯示新選擇圖片的預覽網址，否則回退顯示既有商品圖片
 const displayPreviewUrl = computed(() => {
   if (previewObjectUrl.value) return previewObjectUrl.value
   return existingImage.value ? resolveProductImage(existingImage.value) : ''
 })
 
+// 釋放瀏覽器建立的暫存預覽 URL，避免記憶體洩漏
 function revokePreviewUrl() {
   if (previewObjectUrl.value) {
     URL.revokeObjectURL(previewObjectUrl.value)
@@ -55,6 +62,9 @@ function revokePreviewUrl() {
   }
 }
 
+/**
+ * 重設表單為新增商品的初始狀態
+ */
 function resetForm() {
   revokePreviewUrl()
   name.value = ''
@@ -67,6 +77,9 @@ function resetForm() {
   specs.value = [{ localId: nextSpecLocalId++, spec: '', taste: '', price: '' }]
 }
 
+/**
+ * 編輯模式載入既有商品資料與規格回填表單
+ */
 async function loadProductForEdit(productId: number) {
   isLoading.value = true
   errorMessage.value = ''
@@ -100,6 +113,7 @@ async function loadProductForEdit(productId: number) {
   }
 }
 
+// 監聽路由 id 變化，支援在新增／編輯頁面間切換時自動重載或清空表單
 watch(
   editProductId,
   (id) => {
@@ -120,11 +134,15 @@ function addSpecRow() {
   specs.value.push({ localId: nextSpecLocalId++, spec: '', taste: '', price: '' })
 }
 
+// 至少保留一組商品規格，避免送出空規格列表
 function removeSpecRow(localId: number) {
   if (specs.value.length <= 1) return
   specs.value = specs.value.filter((row) => row.localId !== localId)
 }
 
+/**
+ * 處理圖片選取並驗證檔案格式與大小（<= 5MB）
+ */
 function handleFileChange(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -149,11 +167,15 @@ function handleFileChange(event: Event) {
   previewObjectUrl.value = URL.createObjectURL(file)
 }
 
+/**
+ * 驗證基本欄位與多組規格後，以 FormData 呼叫新增或更新商品 API
+ */
 async function handleSubmit() {
   errorMessage.value = ''
 
   const trimmedName = name.value.trim()
   const trimmedCategory = category.value.trim()
+  // 使用 String() 轉字串再 trim()，避免 <input type="number"> 回傳數值型別時出錯
   const rawStock = String(stock.value ?? '').trim()
   const parsedStock = Number(rawStock)
 
@@ -193,6 +215,7 @@ async function handleSubmit() {
     normalizedSpecs.push({ spec, taste, price })
   }
 
+  // 組裝 multipart/form-data，規格陣列序列化為 JSON 字串供後端 Transaction 寫入
   const formData = new FormData()
   formData.append('name', trimmedName)
   formData.append('category', trimmedCategory)

@@ -7,6 +7,7 @@ import MemberSidebar from './MemberSidebar.vue'
 
 const svgAsset = (filename: string) => `${import.meta.env.BASE_URL}svg/${filename}`
 
+// 依滑鼠懸停狀態切換右下角吉祥物圖片
 const isMascotHovered = ref(false)
 const mascotSrc = computed(() =>
   isMascotHovered.value ? svgAsset('sway.svg') : svgAsset('wait.svg'),

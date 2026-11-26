@@ -3,8 +3,8 @@ import type { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db.js';
 import { requireAdmin, requireAuth } from '../middlewares/auth.js';
 import {
-  buildUploadedImageUrl,
   deleteUploadedProductImage,
+  persistUploadedProductImage,
   uploadProductImage
 } from '../middlewares/upload.js';
 
@@ -65,6 +65,9 @@ interface SpecInput {
   price: number;
 }
 
+/**
+ * 將商品主表與規格明細表組裝為前端使用的商品結構（含去重口味清單與價格區間）
+ */
 function assembleProducts(
   productRows: ProductRow[],
   specRows: ProductSpecRow[]
@@ -106,6 +109,9 @@ function assembleProducts(
   });
 }
 
+/**
+ * 解析並驗證商品規格陣列（支援 multipart/form-data 夾帶的 JSON 字串）
+ */
 function parseSpecsInput(rawSpecs: unknown): { specs?: SpecInput[]; error?: string } {
   let parsed: unknown = rawSpecs;
 
@@ -144,6 +150,9 @@ function parseSpecsInput(rawSpecs: unknown): { specs?: SpecInput[]; error?: stri
   return { specs: normalized };
 }
 
+/**
+ * 驗證商品基本欄位（分類、名稱、整數庫存）與至少一組規格價格
+ */
 function parseProductPayload(body: Record<string, unknown>) {
   const category = typeof body.category === 'string' ? body.category.trim() : '';
   const name = typeof body.name === 'string' ? body.name.trim() : '';
@@ -177,6 +186,9 @@ function parseProductPayload(body: Record<string, unknown>) {
   };
 }
 
+/**
+ * 依商品 ID 查詢單筆商品與其所有規格，並組裝為統一回傳格式
+ */
 async function fetchFormattedProductById(productId: number): Promise<FormattedProduct | null> {
   const [productRows] = await pool.query<ProductRow[]>(
     `SELECT product_id, category, product_name, product_img, product_stock, introduction
@@ -228,6 +240,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const parsedPage = Number.parseInt(String(req.query.page ?? '1'), 10);
     const parsedLimit = Number.parseInt(String(req.query.limit ?? '6'), 10);
     const page = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
+    // 限制單頁最多查詢 50 筆，防止一次撈取過多資料
     const limit =
       Number.isNaN(parsedLimit) || parsedLimit < 1 ? 6 : Math.min(parsedLimit, 50);
 
@@ -247,6 +260,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
+    // 兩段式分頁查詢：先查總數與分頁後的 product_id，再一次撈回對應規格，避免 LEFT JOIN + LIMIT 造成分頁筆數錯亂與 N+1 查詢
     const [countRows] = await pool.query<CountRow[]>(
       `SELECT COUNT(*) AS total FROM product ${whereClause}`,
       params
@@ -334,24 +348,33 @@ router.post(
   requireAdmin,
   uploadProductImage,
   async (req: Request, res: Response): Promise<void> => {
-    const uploadedPath = req.file ? buildUploadedImageUrl(req.file.filename) : null;
     const body = (req.body ?? {}) as Record<string, unknown>;
     const parsed = parseProductPayload(body);
 
     if (parsed.error || !parsed.data) {
-      deleteUploadedProductImage(uploadedPath);
       res.status(400).json({ message: parsed.error ?? '商品資料驗證失敗' });
       return;
     }
 
     const fallbackImage = typeof body.image === 'string' ? body.image.trim() : '';
-    const productImg = uploadedPath ?? fallbackImage;
-
-    if (!productImg) {
+    if (!req.file && !fallbackImage) {
       res.status(400).json({ message: '請上傳商品圖片' });
       return;
     }
 
+    // 先完成圖片上傳再開啟資料庫 Transaction，避免外部圖床 I/O 長時間佔用資料庫連線與列鎖
+    let uploadedPath: string | null = null;
+    if (req.file) {
+      try {
+        uploadedPath = await persistUploadedProductImage(req.file);
+      } catch (err) {
+        console.error('[POST /api/products][upload]', err);
+        res.status(502).json({ message: '圖片上傳至圖床失敗，請稍後再試' });
+        return;
+      }
+    }
+
+    const productImg = uploadedPath ?? fallbackImage;
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
@@ -386,8 +409,9 @@ router.post(
       const product = await fetchFormattedProductById(newProductId);
       res.status(201).json({ message: '商品上架成功', product });
     } catch (err) {
+      // 寫入失敗時回滾交易並補償清理剛剛上傳的圖片，維持資料與圖床一致
       await conn.rollback();
-      deleteUploadedProductImage(uploadedPath);
+      void deleteUploadedProductImage(uploadedPath);
       console.error('[POST /api/products]', err);
       res.status(500).json({ message: '伺服器錯誤，商品上架失敗' });
     } finally {
@@ -403,11 +427,9 @@ router.put(
   requireAdmin,
   uploadProductImage,
   async (req: Request, res: Response): Promise<void> => {
-    const uploadedPath = req.file ? buildUploadedImageUrl(req.file.filename) : null;
     const rawId = req.params.id;
 
     if (typeof rawId !== 'string' || !/^\d+$/.test(rawId)) {
-      deleteUploadedProductImage(uploadedPath);
       res.status(400).json({ message: '無效的商品編號' });
       return;
     }
@@ -417,9 +439,35 @@ router.put(
     const parsed = parseProductPayload(body);
 
     if (parsed.error || !parsed.data) {
-      deleteUploadedProductImage(uploadedPath);
       res.status(400).json({ message: parsed.error ?? '商品資料驗證失敗' });
       return;
+    }
+
+    // 先確認商品存在後再上傳新圖，避免不存在的商品編號造成孤兒圖片
+    try {
+      const [checkRows] = await pool.query<ProductImageRow[]>(
+        'SELECT product_img FROM product WHERE product_id = ? LIMIT 1',
+        [productId]
+      );
+      if (checkRows.length === 0) {
+        res.status(404).json({ message: '找不到此商品' });
+        return;
+      }
+    } catch (err) {
+      console.error('[PUT /api/products/:id][check]', err);
+      res.status(500).json({ message: '伺服器錯誤，無法查詢商品' });
+      return;
+    }
+
+    let uploadedPath: string | null = null;
+    if (req.file) {
+      try {
+        uploadedPath = await persistUploadedProductImage(req.file);
+      } catch (err) {
+        console.error('[PUT /api/products/:id][upload]', err);
+        res.status(502).json({ message: '圖片上傳至圖床失敗，請稍後再試' });
+        return;
+      }
     }
 
     const conn = await pool.getConnection();
@@ -435,7 +483,7 @@ router.put(
 
       if (existingRows.length === 0) {
         await conn.rollback();
-        deleteUploadedProductImage(uploadedPath);
+        void deleteUploadedProductImage(uploadedPath);
         res.status(404).json({ message: '找不到此商品' });
         return;
       }
@@ -477,15 +525,16 @@ router.put(
 
       await conn.commit();
 
+      // 交易確定提交成功後，才清理被替換掉的舊圖片
       if (oldImageToDelete) {
-        deleteUploadedProductImage(oldImageToDelete);
+        void deleteUploadedProductImage(oldImageToDelete);
       }
 
       const product = await fetchFormattedProductById(productId);
       res.json({ message: '商品更新成功', product });
     } catch (err) {
       await conn.rollback();
-      deleteUploadedProductImage(uploadedPath);
+      void deleteUploadedProductImage(uploadedPath);
       console.error('[PUT /api/products/:id]', err);
       res.status(500).json({ message: '伺服器錯誤，商品更新失敗' });
     } finally {
@@ -522,7 +571,7 @@ router.delete(
       const oldImg = existingRows[0]?.product_img;
 
       await pool.execute('DELETE FROM product WHERE product_id = ?', [productId]);
-      deleteUploadedProductImage(oldImg);
+      void deleteUploadedProductImage(oldImg);
 
       res.json({ message: '商品已刪除', id: productId });
     } catch (err) {

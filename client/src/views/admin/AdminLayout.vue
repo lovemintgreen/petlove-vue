@@ -16,12 +16,14 @@ import { useAuthStore } from '@/stores/auth'
 const router = useRouter()
 const authStore = useAuthStore()
 
+// 行動版側邊抽屜選單開關
 const isMobileMenuOpen = ref(false)
 
 function closeMenu() {
   isMobileMenuOpen.value = false
 }
 
+// 清除登入權杖與使用者狀態後導回登入頁
 async function handleLogout() {
   authStore.logout()
   await router.replace({ name: 'login' })

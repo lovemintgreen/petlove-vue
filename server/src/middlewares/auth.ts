@@ -7,6 +7,9 @@ interface RoleRow extends RowDataPacket {
   role: string | null;
 }
 
+/**
+ * 驗證 Authorization Bearer JWT，通過後將解碼資訊掛載至 req.user
+ */
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -28,6 +31,9 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   }
 }
 
+/**
+ * 驗證管理員權限：不直接信任 JWT 內的 role，而是即時查表確認，確保降權能立即生效
+ */
 export async function requireAdmin(
   req: Request,
   res: Response,

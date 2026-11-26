@@ -13,6 +13,7 @@ interface OrderScoreItem {
 
 const imgAsset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
 
+// 服務訂單評價紀錄（score 為 null 代表飼主尚未評分）
 const scores = ref<OrderScoreItem[]>([
   { id: 1, guestName: '王小明', date: '2026-11-18', period: '13:00', times: 2, score: null },
   { id: 2, guestName: '林小美', date: '2026-11-12', period: '10:00', times: 1, score: 5 },

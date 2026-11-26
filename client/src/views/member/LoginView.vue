@@ -11,12 +11,14 @@ const authStore = useAuthStore()
 
 const asset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
 
+// 登入表單欄位與 UI 狀態
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const errorMessage = ref('')
 const isSubmitting = ref(false)
 
+// 優先返回瀏覽器上一頁，若無歷史紀錄則回到首頁
 function handleGoBack() {
   if (window.history.length > 1) {
     router.back()
@@ -25,6 +27,7 @@ function handleGoBack() {
   }
 }
 
+// 僅允許站內相對路徑（以 / 開頭）作為登入後重導目標，防止 Open Redirect
 function getRedirectTarget() {
   const redirect = route.query.redirect
   if (typeof redirect === 'string' && redirect.startsWith('/')) {
@@ -33,6 +36,9 @@ function getRedirectTarget() {
   return { name: 'member' }
 }
 
+/**
+ * 驗證輸入欄位後呼叫登入 API，成功後導回目標頁或會員中心
+ */
 async function handleSubmit() {
   errorMessage.value = ''
 

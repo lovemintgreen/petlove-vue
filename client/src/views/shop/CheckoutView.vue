@@ -14,6 +14,7 @@ const cartStore = useCartStore()
 
 const imgAsset = resolveProductImage
 
+// 結帳表單預設自動帶入已登入會員的姓名、電話與信箱
 const form = ref({
   recipientName: authStore.user?.name ?? '',
   recipientPhone: authStore.user?.phone ?? '',
@@ -25,6 +26,9 @@ const form = ref({
 
 const errorMessage = ref('')
 
+/**
+ * 驗證收件人欄位後送出訂單、清空購物車並導向訂單完成頁
+ */
 function handleSubmitOrder() {
   errorMessage.value = ''
 

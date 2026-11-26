@@ -7,6 +7,7 @@ const authStore = useAuthStore()
 
 const imgAsset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
 
+// 個人檔案頁籤切換：'profile'（基本資料）或 'work'（工作設定）
 const activeTab = ref<'profile' | 'work'>('profile')
 
 // 後續串接 /api/member/jobsetting 取得真實工作設定
@@ -19,6 +20,7 @@ const jobSetting = ref({
   price: 'TWD 300 / 天',
 })
 
+// 個人服務照片展示清單
 const galleryPhotos = [
   { src: imgAsset('girl with dog.jpg'), alt: '服務照片 1' },
   { src: imgAsset('lookupcat.jpg'), alt: '服務照片 2' },

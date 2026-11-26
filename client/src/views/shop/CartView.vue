@@ -11,8 +11,12 @@ const router = useRouter()
 const authStore = useAuthStore()
 const cartStore = useCartStore()
 
+// 圖片路徑解析工具
 const imgAsset = resolveProductImage
 
+/**
+ * 前往結帳：未登入時先導向登入頁並帶入返回結帳頁的重導參數
+ */
 function handleProceedCheckout() {
   if (cartStore.items.length === 0) return
 

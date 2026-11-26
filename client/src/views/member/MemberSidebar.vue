@@ -15,6 +15,7 @@ const authStore = useAuthStore()
 
 const asset = (filename: string) => `${import.meta.env.BASE_URL}img/${filename}`
 
+// 會員主要功能與個人設定子選單連結
 const mainLinks: SidebarLink[] = [
   { label: '商品訂單記錄', to: '/member/history' },
   { label: '我的請求', to: '/member/request' },
@@ -32,6 +33,7 @@ const profileLinks: SidebarLink[] = [
 
 const isProfileRoute = (path: string) => profileLinks.some((item) => path.startsWith(item.to))
 
+// 若目前位於個人資料相關子路由，預設展開「會員資料」摺疊選單
 const isInfoMenuOpen = ref(isProfileRoute(route.path))
 const isMobileNavOpen = ref(false)
 
@@ -52,6 +54,7 @@ function closeMobileNav() {
   isMobileNavOpen.value = false
 }
 
+// 清除登入狀態後導回登入頁
 async function handleLogout() {
   authStore.logout()
   await router.replace({ name: 'login' })

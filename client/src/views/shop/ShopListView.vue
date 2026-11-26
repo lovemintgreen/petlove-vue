@@ -11,10 +11,12 @@ import type { PaginationMeta, Product } from '@/types/shop'
 
 const route = useRoute()
 
+// 圖片路徑解析工具與每頁顯示商品筆數
 const imgAsset = resolveProductImage
 
 const PAGE_SIZE = 6
 
+// 商品分類、列表與分頁狀態
 const categories = ref<string[]>([])
 const products = ref<Product[]>([])
 const pagination = ref<PaginationMeta>({
@@ -24,18 +26,21 @@ const pagination = ref<PaginationMeta>({
   totalPages: 1,
 })
 
+// 搜尋與 UI 回饋狀態
 const currentPage = ref(1)
 const searchKeyword = ref('')
 const debouncedKeyword = ref('')
 const isLoading = ref(false)
 const errorMessage = ref('')
-const modalProduct = ref<Product | null>(null)
+const modalProduct = ref<Product | null>(null) // 控制快速加購彈窗開啟與目標商品
 const toastMessage = ref('')
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 let toastTimer: ReturnType<typeof setTimeout> | null = null
+// 遞增請求序號，確保快速切換分類或關鍵字時只採用最新一次回應
 let fetchSeq = 0
 
+// 從路由參數解析目前選取的商品分類（空字串代表全部商品）
 const activeCategory = computed(() => {
   const param = route.params.category
   return typeof param === 'string' && param.trim() ? decodeURIComponent(param) : ''
@@ -49,6 +54,9 @@ async function loadCategories() {
   }
 }
 
+/**
+ * 依目前分類、防抖關鍵字與頁碼向後端請求商品列表
+ */
 async function loadProducts() {
   const seq = ++fetchSeq
   isLoading.value = true
@@ -79,6 +87,7 @@ async function loadProducts() {
   }
 }
 
+// 搜尋關鍵字防抖 300ms
 watch(searchKeyword, (value) => {
   if (searchTimer) clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
@@ -86,6 +95,7 @@ watch(searchKeyword, (value) => {
   }, 300)
 })
 
+// 分類或搜尋關鍵字變更時，重置回第 1 頁並重新查詢
 watch([activeCategory, debouncedKeyword], () => {
   currentPage.value = 1
   loadProducts()
@@ -101,6 +111,7 @@ onUnmounted(() => {
   if (toastTimer) clearTimeout(toastTimer)
 })
 
+// 依多組規格的最低與最高價格式化價格區間
 function formatPriceRange(product: Product): string {
   return product.minPrice === product.maxPrice
     ? `NT$${product.minPrice}`
@@ -114,6 +125,7 @@ function goToPage(page: number) {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+// 顯示加入購物車提示吐司並於 2.6 秒後自動關閉
 function handleAddedToast(productName: string) {
   toastMessage.value = `已將「${productName}」加入購物車`
   if (toastTimer) clearTimeout(toastTimer)

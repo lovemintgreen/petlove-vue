@@ -8,6 +8,7 @@ import AppFooter from '@/components/AppFooter.vue'
 const route = useRoute()
 const router = useRouter()
 
+// 訂單完成頁倒數秒數與由 query 取得的訂單編號
 const countdown = ref(5)
 const orderNo = computed(() =>
   typeof route.query.orderNo === 'string' && route.query.orderNo ? route.query.orderNo : '',
@@ -15,6 +16,7 @@ const orderNo = computed(() =>
 
 let timer: ReturnType<typeof setInterval> | null = null
 
+// 掛載後每秒倒數，歸零時自動導回首頁
 onMounted(() => {
   timer = setInterval(() => {
     countdown.value -= 1
@@ -25,6 +27,7 @@ onMounted(() => {
   }, 1000)
 })
 
+// 離開頁面時清除計時器，避免背景重複觸發導頁
 onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
